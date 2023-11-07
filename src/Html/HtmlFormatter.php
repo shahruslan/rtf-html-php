@@ -128,6 +128,28 @@ class HtmlFormatter
     // The Font Table group contains the control word "fonttbl" and some
     // subgroups. Go through the subgroups, ignoring the "fonttbl"
     // identifier.
+
+    // If there are no subgroups in the "fonttbl" group, then most likely all
+    // the fonts come one after another.
+    $groups = array_filter($fontTblGrp->children, function ($item) {
+      return $item instanceof \RtfHtmlPhp\Group;
+    });
+
+    if (count($groups) === 0) {
+      foreach($fontTblGrp->children as $child) {
+        if ($child instanceof \RtfHtmlPhp\ControlWord && $child->word === 'f') {
+          $group = new \RtfHtmlPhp\Group();
+          $groups[] = $group;
+        }
+
+        if (isset($group)) {
+          $group->children[] = $child;
+        }
+      }
+
+      $fontTblGrp->children = array_merge($fontTblGrp->children, $groups);
+    }
+
     foreach($fontTblGrp->children as $child) {
       // Ignore non-group, which should be the fonttbl identified word.
       if(!($child instanceof \RtfHtmlPhp\Group)) continue;
